@@ -43,7 +43,7 @@ endif()
 # Creating entries for target: knn
 # ############################
 
-add_executable( knn  main.cpp )
+add_executable( knn  main.cpp)
 
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS knn )
 

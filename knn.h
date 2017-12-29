@@ -6,7 +6,7 @@
 #define KD_TREE_KNN_KNN_H
 
 #include <vector>
-
+#include "kd_tree.h"
 template <typename Kernel>
 class Knn {
 public:
@@ -28,6 +28,8 @@ public:
         return oi;
     }
 
+private:
+    KDTree<Kernel> m_trese;
 };
 
 #endif //KD_TREE_KNN_KNN_H
