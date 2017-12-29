@@ -3,15 +3,9 @@
 #include <ostream>
 #include <boost/lexical_cast.hpp>
 #include <boost/timer.hpp>
-#include <CGAL/Cartesian_d.h>
-#include <CGAL/Gmpq.h>
-#include <CGAL/Kernel_d/Point_d.h>
-
+#include "defs.h"
 #include "knn.h"
 
-typedef CGAL::Gmpq                      Number_type;
-typedef CGAL::Cartesian_d<Number_type>  Kernel;
-typedef Kernel::Point_d                 Point_d;
 
 Point_d read_point(size_t d, std::ifstream& is)
 {

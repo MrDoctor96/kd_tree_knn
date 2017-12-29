@@ -3,11 +3,15 @@
 
 project( knn )
 
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+
 
 cmake_minimum_required(VERSION 2.8.11)
 
 # CGAL and its components
-find_package( CGAL QUIET COMPONENTS  )
+# find_package( CGAL QUIET COMPONENTS Core )
+find_package( CGAL REQUIRED )
 
 if ( NOT CGAL_FOUND )
 
@@ -45,6 +49,3 @@ add_to_cached_list( CGAL_EXECUTABLE_TARGETS knn )
 
 # Link the executable to CGAL and third-party libraries
 target_link_libraries(knn   ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
