@@ -5,7 +5,7 @@ project( knn )
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS=ON)
 
 cmake_minimum_required(VERSION 2.8.11)
 
@@ -43,7 +43,7 @@ endif()
 # Creating entries for target: knn
 # ############################
 
-add_executable( knn  main.cpp)
+add_executable( knn  main.cpp knn.h kd_tree.h)
 
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS knn )
 

@@ -15,7 +15,9 @@ public:
     // iterator to the input points
     template <typename InputIterator>
             Knn(size_t d, InputIterator beginPoints, InputIterator endPoints)
+	    :m_tree(d)
     {
+        std::vector<Point_d> points = std::vector(beginPoints, endPoints);
         // your build code
     }
 
@@ -29,7 +31,7 @@ public:
     }
 
 private:
-    KDTree<Kernel> m_trese;
+    KDTree<Kernel> m_tree;
 };
 
 #endif //KD_TREE_KNN_KNN_H
