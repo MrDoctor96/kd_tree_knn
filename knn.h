@@ -6,7 +6,8 @@
 #define KD_TREE_KNN_KNN_H
 
 #include <vector>
-#include "kd_tree.h"
+#include <memory>
+
 template <typename Kernel>
 class Knn {
 public:
@@ -15,9 +16,8 @@ public:
     // iterator to the input points
     template <typename InputIterator>
             Knn(size_t d, InputIterator beginPoints, InputIterator endPoints)
-	    :m_tree(d)
     {
-        std::vector<Point_d> points = std::vector(beginPoints, endPoints);
+        m_root = std::make_unique(new KDTree<Kernel>(d, beginPoints, endPoints));
         // your build code
     }
 
@@ -29,9 +29,8 @@ public:
         //your query code
         return oi;
     }
-
 private:
-    KDTree<Kernel> m_tree;
+std::unique_ptr<KDTree<Kernel>> m_root {nullptr};
 };
 
 #endif //KD_TREE_KNN_KNN_H
