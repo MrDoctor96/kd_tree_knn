@@ -33,14 +33,14 @@ public:
     // holds a max-heap to save the neighbors
     bool add_candidate(const Point_d &point);
 
-    Point_d &get_origin() const;
+    Point_d get_origin() const;
 
     size_t size() const;
 
     size_t k() const;
 
     // output: the top of the heap == the furthest neighbor
-    Neighbor &heap_max() const;
+    Neighbor heap_max() const;
 
     // output: a vector of the indexes of the k-nearest-neighbors points
     template<typename OutputIterator>
@@ -53,6 +53,7 @@ private:
 
 
 };
+
 
 template<typename Kernel>
 bool Nearests<Kernel>::Neighbor::operator<(const Neighbor &rhs) const {
@@ -87,7 +88,7 @@ bool Nearests<Kernel>::add_candidate(const Point_d &point) {
 }
 
 template<typename Kernel>
-Point_d &Nearests<Kernel>::get_origin() const {
+typename Kernel::Point_d Nearests<Kernel>::get_origin() const {
     return m_origin;
 }
 
@@ -102,7 +103,7 @@ size_t Nearests<Kernel>::k() const {
 }
 
 template<typename Kernel>
-Neighbor &Nearests<Kernel>::heap_max() const {
+typename Nearests<Kernel>::Neighbor Nearests<Kernel>::heap_max() const {
     return m_neighbors.front();
 }
 
