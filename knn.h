@@ -18,7 +18,7 @@ public:
             Knn(size_t d, InputIterator beginPoints, InputIterator endPoints)
     {
         m_root = std::make_unique(new KDTree<Kernel>(d, beginPoints, endPoints));
-        // your build code
+        m_root->print();
     }
 
     // input: const reference to a d dimensional vector which represent a d-point.
