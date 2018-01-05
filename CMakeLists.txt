@@ -10,8 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS=ON)
 cmake_minimum_required(VERSION 2.8.11)
 
 # CGAL and its components
-# find_package( CGAL QUIET COMPONENTS Core )
-find_package( CGAL REQUIRED )
+find_package( CGAL QUIET COMPONENTS  )
 
 if ( NOT CGAL_FOUND )
 
@@ -36,16 +35,17 @@ if ( NOT Boost_FOUND )
 endif()
 
 # include for local directory
-
+include_directories(.)
 # include for local package
 
 
 # Creating entries for target: knn
 # ############################
 
-add_executable( knn  main.cpp knn.h kd_tree.h)
+add_executable( knn  main.cpp nearests.h)
 
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS knn )
 
 # Link the executable to CGAL and third-party libraries
 target_link_libraries(knn   ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
+

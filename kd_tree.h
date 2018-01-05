@@ -1,10 +1,27 @@
-#ifndef KNN_KD_TREE
-#define KNN_KD_TREE
+//
+// Created by Tomer on 12/28/2017.
+//
+
+#ifndef KNN_KD_TREE_H
+#define KNN_KD_TREE_H
 
 #include <memory>
 #include <iterator>
 #include <algorithm>
 #include <iostream>
+#include "nearests.h"
+
+//template <typename InputIterator>
+//void print_range(InputIterator begin, InputIterator end) {
+//    std::cout << "[";
+//    for (auto it = begin; it != end; ++it) {
+//        if (it != begin) {
+//            std::cout << ", ";
+//        }
+//        std::cout << *it;
+//    }
+//    std::cout << "]" << std::endl;
+//}
 
 template<typename Kernel>
 class KDTree {
@@ -16,12 +33,10 @@ public:
     // iterator to the input points
     // axis - the axis to split by
     template<typename InputIterator>
-    KDTree(size_t d, InputIterator beginPoints, InputIterator endPoints, size_t axis = 0);
+    KDTree(size_t d, InputIterator begin, InputIterator end, size_t axis = 0);
 
-    // input: const reference to a d dimensional vector which represent a d-point.
-    // output: a vector of the indexes of the k-nearest-neighbors points
-    template<typename OutputIterator>
-    OutputIterator find_points(size_t k, const Point_d &it, OutputIterator oi);
+    // input: const reference to a class whose origin is the query point and that will store the k-nearest-neighbors points
+    void find_points(Nearests<Kernel> &nearest_neighbors) const;
 
     bool is_leaf() const;
 
@@ -29,7 +44,7 @@ public:
 
 private:
     template<typename InputIterator>
-    InputIterator find_median_point(InputIterator &begin, InputIterator &end, size_t length) const;
+    InputIterator find_median_point(InputIterator begin, InputIterator end, size_t length) const;
 
     std::unique_ptr<KDTree<Kernel>> m_left;
     std::unique_ptr<KDTree<Kernel>> m_right;
@@ -45,13 +60,17 @@ KDTree<Kernel>::KDTree(size_t d, InputIterator begin, InputIterator end, size_t 
         : m_left(nullptr), m_right(nullptr), m_dimension(d), m_axis(axis) {
     size_t points_size = std::distance(begin, end);
     // points_size < 0 ?!
+    //std::cout << "axis " << m_axis << " with " << points_size << "points." << std::endl;
+    //print_range(begin, end);
     if (points_size == 1) {
         // leaf!
         m_point = *begin;
+        std::cout << "leaf :" << m_point << std::endl;
     } else {
         // mid point - need to pivot
         auto pivot = find_median_point(begin, end, points_size);
         m_split_value = (*pivot)[m_axis];
+        //std::cout << "split value :" << m_split_value << std::endl;
         // go deeper
         auto next_axis = (m_axis + 1) % m_dimension;
         if (pivot != begin) {
@@ -66,20 +85,53 @@ KDTree<Kernel>::KDTree(size_t d, InputIterator begin, InputIterator end, size_t 
 
 template<typename Kernel>
 template<typename InputIterator>
-InputIterator KDTree<Kernel>::find_median_point(InputIterator &begin, InputIterator &end, size_t length) const {
+InputIterator KDTree<Kernel>::find_median_point(InputIterator begin, InputIterator end, size_t length) const {
     auto median = begin + length / 2;
-    std::nth_element(begin, median, end, [&](Point_d p1, Point_d p2) { return p1[m_axis] < p2[m_axis]; });
+    //print_range(begin, end);
+    auto compare_by_axis = [&](Point_d p1, Point_d p2) {
+        return p1[m_axis] < p2[m_axis];
+    };
+    std::nth_element(begin, median, end, compare_by_axis);
+    //print_range(begin, end);
     auto median_axis_value = (*median)[m_axis];
+    if (length % 2 == 0) {
+        // even number of elements, find the previous and do average
+        std::nth_element(begin, median - 1, end, compare_by_axis);
+        median_axis_value += (*(median - 1))[m_axis];
+        median_axis_value /= FT(2);
+    }
+    //std::cout << "median point: "<< *median << " value: " << median_axis_value << std::endl;
     auto split = std::partition(begin, end, [&](Point_d p) { return p[m_axis] <= median_axis_value; });
-    // TODO: handle degenerate cases
+    // TODO: handle degenerate cases?
     return split;
 
 }
 
 template<typename Kernel>
-template<typename OutputIterator>
-OutputIterator KDTree<Kernel>::find_points(size_t k, const Point_d &it, OutputIterator oi) {
-    return oi;
+void KDTree<Kernel>::find_points(Nearests<Kernel> &nearest_neighbors) const {
+    if (is_leaf()) {
+        // add this point
+        nearest_neighbors.add_candidate(m_point);
+        return;
+    }
+    Point_d query_point = nearest_neighbors.get_origin();
+    FT distance = query_point[m_axis] - m_split_value;
+    KDTree<Kernel> *search_path = nullptr;
+    KDTree<Kernel> *other_path = nullptr;
+    if (distance <= 0) {
+        search_path = m_left.get();
+        other_path = m_right.get();
+    } else {
+        search_path = m_right.get();
+        other_path = m_left.get();
+    }
+    search_path->find_points(nearest_neighbors);
+    // should we go examine the other_path?
+    // only if not enough neighbors or the furthest neighbor radius intersects the other region
+    if (nearest_neighbors.size() < nearest_neighbors.k() ||
+        distance * distance <= nearest_neighbors.heap_max().m_sq_distance) {
+        other_path->find_points(nearest_neighbors);
+    }
 }
 
 
@@ -106,18 +158,4 @@ void KDTree<Kernel>::print(std::ostream &out/* = std::cout*/, size_t indent/* = 
 
 }
 
-/*
-template<typename InputIterator>
-KDTree::KDTree(size_t d, InputIterator begin_points, InputIterator end_points)
-: m_dimension(d), m_root(nullptr) {
-    size_t axis = 0;
-    // if only 1 point
-    if (begin_points == end_points) {
-        m_root = std::make_unique(new KDNode(axis++));
-    }
-    for (auto it = begin_points; it != end_points; ++it) {
-        Point_d point = *it;
-
-    }
-}*/
 #endif
