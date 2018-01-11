@@ -33,7 +33,7 @@ public:
     // holds a max-heap to save the neighbors
     bool add_candidate(const Point_d &point);
 
-    Point_d get_origin() const;
+    const Point_d & get_origin() const;
 
     size_t size() const;
 
@@ -47,7 +47,7 @@ public:
     OutputIterator get_neighbors(OutputIterator oi) const;
 
 private:
-    Point_d m_origin;
+    const Point_d m_origin;
     size_t m_k;
     std::vector<Neighbor> m_neighbors;
 
@@ -57,7 +57,10 @@ private:
 
 template<typename Kernel>
 bool Nearests<Kernel>::Neighbor::operator<(const Neighbor &rhs) const {
-    return m_sq_distance < rhs.m_sq_distance ? m_sq_distance < rhs.m_sq_distance : m_point < rhs.m_point;
+    if (m_sq_distance == rhs.m_sq_distance) {
+        return m_point < rhs.m_point;
+    }
+    return m_sq_distance < rhs.m_sq_distance;
 }
 
 template<typename Kernel>
@@ -75,7 +78,8 @@ bool Nearests<Kernel>::add_candidate(const Point_d &point) {
     } else {
         // size == k
         // check if the max is worse than the candidate
-        if (m_neighbors.front().m_sq_distance > candidate.m_sq_distance) {
+        // we only need to check against the furthest since
+        if (heap_max().m_sq_distance > candidate.m_sq_distance) {
             // pop the worst neighbor and replace it
             auto end = m_neighbors.end();
             std::pop_heap(m_neighbors.begin(), m_neighbors.end());
@@ -88,7 +92,7 @@ bool Nearests<Kernel>::add_candidate(const Point_d &point) {
 }
 
 template<typename Kernel>
-typename Kernel::Point_d Nearests<Kernel>::get_origin() const {
+const typename Kernel::Point_d &Nearests<Kernel>::get_origin() const {
     return m_origin;
 }
 
@@ -116,6 +120,5 @@ OutputIterator Nearests<Kernel>::get_neighbors(OutputIterator oi) const {
     return oi;
 
 }
-
 
 #endif //KNN_NEARESTS_H

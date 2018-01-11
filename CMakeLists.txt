@@ -35,14 +35,14 @@ if ( NOT Boost_FOUND )
 endif()
 
 # include for local directory
-include_directories(.)
+
 # include for local package
 
 
 # Creating entries for target: knn
 # ############################
 
-add_executable( knn  main.cpp nearests.h)
+add_executable( knn  main.cpp nearests.h kd_tree.h knn.h)
 
 add_to_cached_list( CGAL_EXECUTABLE_TARGETS knn )
 

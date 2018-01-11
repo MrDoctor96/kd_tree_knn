@@ -11,18 +11,6 @@
 #include <iostream>
 #include "nearests.h"
 
-//template <typename InputIterator>
-//void print_range(InputIterator begin, InputIterator end) {
-//    std::cout << "[";
-//    for (auto it = begin; it != end; ++it) {
-//        if (it != begin) {
-//            std::cout << ", ";
-//        }
-//        std::cout << *it;
-//    }
-//    std::cout << "]" << std::endl;
-//}
-
 template<typename Kernel>
 class KDTree {
 public:
@@ -40,7 +28,7 @@ public:
 
     bool is_leaf() const;
 
-    void print(std::ostream &out = std::cout, size_t indent = 0) const;
+    void print(std::ostream &out = std::cout, size_t indent = 1) const;
 
 private:
     template<typename InputIterator>
@@ -58,25 +46,23 @@ template<typename Kernel>
 template<typename InputIterator>
 KDTree<Kernel>::KDTree(size_t d, InputIterator begin, InputIterator end, size_t axis/* = 0*/)
         : m_left(nullptr), m_right(nullptr), m_dimension(d), m_axis(axis) {
-    size_t points_size = std::distance(begin, end);
-    // points_size < 0 ?!
-    //std::cout << "axis " << m_axis << " with " << points_size << "points." << std::endl;
-    //print_range(begin, end);
+    auto points_size = static_cast<size_t>(std::distance(begin, end));
     if (points_size == 1) {
         // leaf!
         m_point = *begin;
-        std::cout << "leaf :" << m_point << std::endl;
     } else {
         // mid point - need to pivot
         auto pivot = find_median_point(begin, end, points_size);
         m_split_value = (*pivot)[m_axis];
-        //std::cout << "split value :" << m_split_value << std::endl;
-        // go deeper
+
+        // continue splitting in the next axis
         auto next_axis = (m_axis + 1) % m_dimension;
-        if (pivot != begin) {
+        auto left_size = static_cast<size_t>(std::distance(begin, pivot));
+        if (left_size > 0) {
             m_left.reset(new KDTree<Kernel>(d, begin, pivot, next_axis));
         }
-        if (pivot != end) {
+        auto right_size = static_cast<size_t>(std::distance(pivot, end));
+        if (right_size > 0) {
             m_right.reset(new KDTree<Kernel>(d, pivot, end, next_axis));
         }
 
@@ -86,23 +72,19 @@ KDTree<Kernel>::KDTree(size_t d, InputIterator begin, InputIterator end, size_t 
 template<typename Kernel>
 template<typename InputIterator>
 InputIterator KDTree<Kernel>::find_median_point(InputIterator begin, InputIterator end, size_t length) const {
-    auto median = begin + length / 2;
-    //print_range(begin, end);
+    auto median_ptr = begin + length / 2;
     auto compare_by_axis = [&](Point_d p1, Point_d p2) {
         return p1[m_axis] < p2[m_axis];
     };
-    std::nth_element(begin, median, end, compare_by_axis);
-    //print_range(begin, end);
-    auto median_axis_value = (*median)[m_axis];
+    std::nth_element(begin, median_ptr, end, compare_by_axis);
+    auto median_axis_value = (*median_ptr)[m_axis];
     if (length % 2 == 0) {
         // even number of elements, find the previous and do average
-        std::nth_element(begin, median - 1, end, compare_by_axis);
-        median_axis_value += (*(median - 1))[m_axis];
+        std::nth_element(begin, median_ptr - 1, end, compare_by_axis);
+        median_axis_value += (*(median_ptr - 1))[m_axis];
         median_axis_value /= FT(2);
     }
-    //std::cout << "median point: "<< *median << " value: " << median_axis_value << std::endl;
     auto split = std::partition(begin, end, [&](Point_d p) { return p[m_axis] <= median_axis_value; });
-    // TODO: handle degenerate cases?
     return split;
 
 }
@@ -114,10 +96,11 @@ void KDTree<Kernel>::find_points(Nearests<Kernel> &nearest_neighbors) const {
         nearest_neighbors.add_candidate(m_point);
         return;
     }
-    Point_d query_point = nearest_neighbors.get_origin();
+    const Point_d &query_point = nearest_neighbors.get_origin();
     FT distance = query_point[m_axis] - m_split_value;
     KDTree<Kernel> *search_path = nullptr;
     KDTree<Kernel> *other_path = nullptr;
+    // choose obvious search path and possible pruned path
     if (distance <= 0) {
         search_path = m_left.get();
         other_path = m_right.get();
