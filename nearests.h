@@ -40,7 +40,7 @@ public:
     size_t k() const;
 
     // output: the top of the heap == the furthest neighbor
-    Neighbor heap_max() const;
+    const Neighbor & heap_max() const;
 
     // output: a vector of the indexes of the k-nearest-neighbors points
     template<typename OutputIterator>
@@ -107,7 +107,7 @@ size_t Nearests<Kernel>::k() const {
 }
 
 template<typename Kernel>
-typename Nearests<Kernel>::Neighbor Nearests<Kernel>::heap_max() const {
+const typename Nearests<Kernel>::Neighbor &Nearests<Kernel>::heap_max() const {
     return m_neighbors.front();
 }
 
