@@ -6,7 +6,7 @@ def main(d, n):
     for i in xrange(n):
         for j in xrange(d):
             num1 = random.randint(0, 100)
-            num2 = random.randint(0, 100)
+            num2 = random.randint(1, 100)
             num = str(num1) + '/' + str(num2)
             l.append(num)
     print l

@@ -21,7 +21,7 @@ public:
     Knn(size_t d, InputIterator beginPoints, InputIterator endPoints)
         :m_points_size(static_cast<size_t>(std::distance(beginPoints, endPoints))),
          m_root(new KDTree<Kernel>(d, beginPoints, endPoints)){
-        m_root->print();
+        //m_root->print();
     }
 
     // input: const reference to a d dimensional vector which represent a d-point.
