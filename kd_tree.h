@@ -31,6 +31,8 @@ public:
     void print(std::ostream &out = std::cout, size_t indent = 0) const;
 
 private:
+    // input: iterators for the points
+    // output: an iterator that points to median point, which is guaranteed to hold begin >= it > end.
     template<typename InputIterator>
     InputIterator find_median_point(InputIterator begin, InputIterator end, size_t length) const;
 
@@ -53,8 +55,8 @@ KDTree<Kernel>::KDTree(size_t d, InputIterator begin, InputIterator end, size_t 
     } else {
         // mid point - need to pivot
         auto pivot = find_median_point(begin, end, points_size);
+        // find_median_point returns a valid point.
         m_split_value = (*pivot)[m_axis];
-
         // continue splitting in the next axis
         auto next_axis = (m_axis + 1) % m_dimension;
         auto left_size = static_cast<size_t>(std::distance(begin, pivot));
@@ -66,13 +68,14 @@ KDTree<Kernel>::KDTree(size_t d, InputIterator begin, InputIterator end, size_t 
             m_right.reset(new KDTree<Kernel>(d, pivot, end, next_axis));
         }
 
+
     }
 }
 
 template<typename Kernel>
 template<typename InputIterator>
 InputIterator KDTree<Kernel>::find_median_point(InputIterator begin, InputIterator end, size_t length) const {
-    auto median_ptr = begin + length / 2;
+    auto median_ptr = begin + (length - 1) / 2;
     auto compare_by_axis = [&](Point_d p1, Point_d p2) {
         if (p1 != p2) {
             // compare by axis, break ties in a cyclic-lexicographic manner
@@ -87,13 +90,25 @@ InputIterator KDTree<Kernel>::find_median_point(InputIterator begin, InputIterat
     };
     std::nth_element(begin, median_ptr, end, compare_by_axis);
     auto median_axis_value = (*median_ptr)[m_axis];
-    if (length % 2 == 0) {
-        // even number of elements, find the previous and do average
-        std::nth_element(begin, median_ptr - 1, end, compare_by_axis);
-        median_axis_value += (*(median_ptr - 1))[m_axis];
-        median_axis_value /= FT(2);
-    }
     auto split = std::partition(begin, end, [&](Point_d p) { return p[m_axis] <= median_axis_value; });
+    // edge cases - the split node is one of the edges, need to choose an inner point.
+    if (split == end) {
+        // no elements are greater than the split.
+        // find the lower_bound and return their median.
+        auto bound = std::lower_bound(begin, end, median_axis_value, [&](Point_d p, FT value) {return p[m_axis] < value;} );
+        auto dist = static_cast<size_t>(std::distance(bound, split));
+        if (dist > 0) {
+            split = bound + ((dist - 1) / 2);
+        }
+    } else if (split == begin) {
+        // no elements are smaller than the split.
+        // find the upper_bound and return their median.
+        auto bound = std::upper_bound(begin, end, median_axis_value, [&](FT value, Point_d p) {return value < p[m_axis];} );
+        auto dist = static_cast<size_t>(std::distance(split, bound));
+        if (dist > 0) {
+            split = split + ((dist - 1) / 2);
+        }
+    }
     return split;
 
 }
@@ -123,7 +138,7 @@ void KDTree<Kernel>::find_points(Nearests<Kernel> &nearest_neighbors) const {
     // should we go examine the other_path?
     // only if not enough neighbors or the furthest neighbor radius intersects the other region
     if (other_path != nullptr && (nearest_neighbors.size() < nearest_neighbors.k() ||
-        distance * distance <= nearest_neighbors.heap_max().m_sq_distance)) {
+                                  distance * distance <= nearest_neighbors.heap_max().m_sq_distance)) {
         other_path->find_points(nearest_neighbors);
     }
 }
