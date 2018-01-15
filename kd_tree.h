@@ -77,16 +77,7 @@ template<typename InputIterator>
 InputIterator KDTree<Kernel>::find_median_point(InputIterator begin, InputIterator end, size_t length) const {
     auto median_ptr = begin + (length - 1) / 2;
     auto compare_by_axis = [&](Point_d p1, Point_d p2) {
-        if (p1 != p2) {
-            // compare by axis, break ties in a cyclic-lexicographic manner
-            for (size_t i = 0; i < m_dimension; ++i) {
-                size_t axis = (m_axis + i) % m_dimension;
-                if (p1[axis] != p2[axis]) {
-                    return p1[axis] < p2[axis];
-                }
-            }
-        }
-        return false;
+        return p1[m_axis] < p2[m_axis];
     };
     std::nth_element(begin, median_ptr, end, compare_by_axis);
     auto median_axis_value = (*median_ptr)[m_axis];
